@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>몸개그 대전</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Jua&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="stage" aria-hidden="true"></div>
+
+<section id="menu" aria-label="대전 설정">
+  <div class="card">
+    <h1 class="title display"><span>몸개그</span><span>대전</span></h1>
+    <p class="lede">흐물흐물한 인형으로 때리고, 붙잡고, 던지세요. 아홉 라운드를 치러 우승자를 가립니다.</p>
+
+    <fieldset class="field">
+      <legend>내 캐릭터</legend>
+      <div class="char-stage">
+        <button type="button" class="char-arrow prev" id="charPrev" aria-label="이전 캐릭터">‹</button>
+        <canvas id="charPreview" aria-hidden="true"></canvas>
+        <button type="button" class="char-arrow next" id="charNext" aria-label="다음 캐릭터">›</button>
+        <div class="char-name"><b id="charName"></b><span id="charAb"></span></div>
+      </div>
+      <div class="char-grid" id="charGrid"></div>
+      <p class="hint" id="charHint"></p>
+    </fieldset>
+
+    <fieldset class="field">
+      <legend>게임 모드</legend>
+      <div class="seg mode-seg" id="segMode">
+        <button type="button" data-v="battle" aria-pressed="true">난투</button>
+        <button type="button" data-v="soccer" aria-pressed="false">축구</button>
+        <button type="button" data-v="collect" aria-pressed="false">공 가져오기</button>
+      </div>
+      <p class="hint" id="modeHint"></p>
+    </fieldset>
+
+    <div class="tabs" role="group" aria-label="게임 방식">
+      <button type="button" id="tabSolo" aria-pressed="true">혼자 하기</button>
+      <button type="button" id="tabOnline" aria-pressed="false">온라인 대전</button>
+    </div>
+
+    <div id="soloPane">
+      <fieldset class="field">
+        <legend>컴퓨터 수</legend>
+        <div class="seg" id="segCpu">
+          <button type="button" data-v="1" aria-pressed="false">1명</button>
+          <button type="button" data-v="2" aria-pressed="false">2명</button>
+          <button type="button" data-v="3" aria-pressed="true">3명</button>
+        </div>
+        <p class="hint" id="teamHint"></p>
+      </fieldset>
+      <button class="go" id="startBtn" type="button">대전 시작</button>
+    </div>
+
+    <div id="onlinePane" hidden>
+      <div id="onlineEntry">
+        <button class="go" id="createBtn" type="button">방 만들기</button>
+        <div class="join">
+          <label for="codeIn">친구 방에 들어가기</label>
+          <div class="join-row">
+            <input id="codeIn" maxlength="4" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="코드 4자리">
+            <button class="go small" id="joinBtn" type="button">참가</button>
+          </div>
+        </div>
+        <p class="hint" id="netMsg">친구와 2명부터 4명까지 함께할 수 있어요. 모두 claude.ai에 로그인한 상태로 이 페이지를 열어야 합니다.</p>
+      </div>
+      <div id="lobby" hidden>
+        <div class="code-wrap"><p>방 코드</p><div class="code" id="codeOut">----</div></div>
+        <p class="hint">이 코드를 친구에게 알려 주세요. 친구가 이 페이지의 온라인 대전에서 코드를 입력하면 들어옵니다. 게임 모드는 방장이 고릅니다.</p>
+        <ul id="roster"></ul>
+        <label class="check" id="fillRow"><input type="checkbox" id="fillChk" checked>빈자리를 컴퓨터로 채우기</label>
+        <button class="go" id="netStartBtn" type="button">대전 시작</button>
+        <p class="hint" id="lobbyMsg"></p>
+        <button class="ghost" id="leaveBtn" type="button">방 나가기</button>
+      </div>
+    </div>
+
+    <div class="keys">
+      <h3>조작</h3>
+      <dl>
+        <dt><kbd>WASD</kbd><kbd>방향키</kbd></dt><dd>이동</dd>
+        <dt><kbd>Space</kbd></dt><dd>점프</dd>
+        <dt><kbd>Q</kbd><kbd>J</kbd></dt><dd>펀치</dd>
+        <dt><kbd>E</kbd><kbd>K</kbd></dt><dd>잡기, 한 번 더 누르면 던지기</dd>
+        <dt><kbd>Shift</kbd><kbd>L</kbd></dt><dd>돌진</dd>
+        <dt><kbd>F</kbd><kbd>I</kbd></dt><dd>캐릭터 능력</dd>
+        <dt><kbd>마우스</kbd></dt><dd>시점 돌리기. 게임 화면을 누르면 마우스가 고정되고 Esc로 풀립니다.</dd>
+      </dl>
+    </div>
+    <p class="touch-note">휴대폰에서는 화면 왼쪽을 끌어서 움직이고, 오른쪽 빈 곳을 끌어서 시점을 돌리며, 오른쪽 버튼으로 펀치, 잡기, 점프, 돌진, 능력을 씁니다. 가로로 눕혀서 하면 경기장이 더 넓게 보여요.</p>
+    <ul class="rules">
+      <li>펀치에 맞으면 1.5초, 던져지면 0.75초 동안 흐물흐물해져서 움직일 수 없습니다.</li>
+      <li>펀치를 연달아 맞으면 기절합니다. 기절한 상대는 잡아서 던질 수 있습니다.</li>
+      <li>라운드마다 경기장 모양과 장애물이 무작위로 바뀝니다.</li>
+    </ul>
+  </div>
+</section>
+
+<div id="hud" hidden>
+  <div id="clock"><b id="timer">60</b><span id="roundLbl">라운드 1/9</span> <span id="eventLbl"></span> <span id="netLbl" hidden></span><span id="teamScore" hidden></span></div>
+  <div id="feed" aria-live="polite"></div>
+  <div id="chips"></div>
+</div>
+<button id="sound" type="button" aria-pressed="false">소리 끄기</button>
+
+<div id="touchUI" hidden>
+  <div id="joyZone"><div id="joyBase"><div id="joyKnob"></div></div></div>
+  <div id="camZone"></div>
+  <div id="btnZone">
+    <button type="button" class="tbtn" id="tPunch" data-code="TouchPunch">펀치</button>
+    <button type="button" class="tbtn" id="tGrab" data-code="TouchGrab">잡기</button>
+    <button type="button" class="tbtn" id="tJump" data-code="TouchJump">점프</button>
+    <button type="button" class="tbtn" id="tDash" data-code="TouchDash">돌진</button>
+    <button type="button" class="tbtn" id="tAb" data-code="TouchAbility">능력</button>
+  </div>
+</div>
+
+<div id="rhythm" hidden>
+  <div class="rh-title">반격 리듬! 박자에 맞춰 누르세요</div>
+  <div class="rh-board" id="rhBoard">
+    <div class="rh-lane" data-l="0"><b>←</b><small>A</small></div>
+    <div class="rh-lane" data-l="1"><b>↓</b><small>S</small></div>
+    <div class="rh-lane" data-l="2"><b>↑</b><small>W</small></div>
+    <div class="rh-lane" data-l="3"><b>→</b><small>D</small></div>
+    <div class="rh-line"></div>
+    <div id="rhNotes"></div>
+  </div>
+  <div class="rh-pips" id="rhPips"><i></i><i></i></div>
+  <div id="rhJudge"></div>
+</div>
+
+<div id="banner" aria-live="polite"><div id="bannerBig"></div><div id="bannerSmall"></div></div>
+
+<div id="replay" hidden>
+  <div id="replayTag">굴욕 리플레이</div>
+  <div id="replayCap"></div>
+  <div id="replaySkip">Enter 키로 건너뛰기</div>
+</div>
+
+<section id="result" hidden aria-live="polite">
+  <div class="card">
+    <h2 id="resTitle" class="display">라운드 결과</h2>
+    <p id="resSub"></p>
+    <ol id="resList"></ol>
+    <button class="go" id="resNext" type="button">다음 라운드</button>
+    <p id="resWait" hidden>방장이 다음 라운드를 시작하면 이어집니다.</p>
+    <button class="ghost" id="resMenu" type="button">처음 화면으로</button>
+  </div>
+</section>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="engine.js"></script>
+<script src="world.js"></script>
+<script src="characters.js"></script>
+<script src="game.js"></script>
+<script src="rounds.js"></script>
+<script src="online.js"></script>
+<script src="ui.js"></script>
+</body>
+</html>
